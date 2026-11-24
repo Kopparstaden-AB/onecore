@@ -11,6 +11,16 @@ export interface Config {
   xpandDatabase: KnexConnectionParameters
   contactsDatabase: KnexConnectionParameters
   xpandSoap: XpandSoapConfig
+  /** Unset unless the Momentum backend is selected. */
+  momentumApi?: MomentumApiConfig
+  contactsBackend: {
+    /**
+     * Which system of record to read and write contacts through. Validated
+     * against `contactsBackends` when the backend is built, so an unknown
+     * value fails at startup.
+     */
+    name: string
+  }
   logging: {
     enabled: boolean
   }
@@ -36,6 +46,13 @@ export interface XpandSoapConfig {
   /** Xpand tenant/company selector. '001' is Mimer. */
   companyCode: string
   timeoutMs: number
+}
+
+export interface MomentumApiConfig {
+  url: string
+  graphqlUrl: string
+  username: string
+  password: string
 }
 
 const config = configPackage({
@@ -68,6 +85,9 @@ const config = configPackage({
       companyCode: '001',
       timeoutMs: 30000,
     },
+    contactsBackend: {
+      name: 'xpand',
+    },
     logging: {
       enabled: true,
     },
@@ -81,4 +101,6 @@ export default {
   xpandDatabase: config.get('xpandDatabase'),
   contactsDatabase: config.get('contactsDatabase'),
   xpandSoap: config.get('xpandSoap'),
+  momentumApi: config.get('momentumApi'),
+  contactsBackend: config.get('contactsBackend'),
 } satisfies Config

@@ -217,4 +217,6 @@ export interface ContactsRepository {
     codes: ContactCode[],
     options?: { includeRelations?: boolean }
   ) => Promise<Contact[]>
+
+  getContactsUpdatedSince: (since: Date) => Promise<Contact[]>
 }

@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "dev": "pnpm migrate:up && node -r dotenv/config --import tsx --watch src/index",
+    "dev": "node -r dotenv/config --import tsx --watch src/index",
     "dev:local": "node -r dotenv/config --import tsx --watch src/index",
     "dev:init": "pnpm prepare:dotenv",
     "dev:script:import-contact-relations": "node -r dotenv/config --import tsx src/scripts/import-contact-relations/index.ts",

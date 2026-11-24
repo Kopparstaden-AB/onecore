@@ -24,6 +24,7 @@ export const PhoneNumberTypeSchema = z.enum([
   'direct-line',
   'fax',
   'pager',
+  'intercom',
   'unspecified',
 ])
 

@@ -257,6 +257,34 @@ export const routes = (
   )
 
   router.get(
+    '/contacts/updated-since',
+    {
+      summary: 'Get all contacts that have been updated since a given date',
+      description:
+        'Gets all contacts that have been updated since a given date',
+      tags: ['Contacts'],
+      query: {
+        since: z.coerce.date(),
+      },
+      response: {
+        200: GetContactsResponseBodySchema,
+        400: ErrorResponseBodySchema,
+      },
+    },
+    async (ctx) => {
+      const metadata = generateRouteMetadata(ctx, ctx.queryParameterNames ?? [])
+      const contacts = await contactsRepository.getContactsUpdatedSince(
+        ctx.query.since
+      )
+
+      ctx.body = {
+        ...metadata,
+        content: { contacts },
+      }
+    }
+  )
+
+  router.get(
     '/contacts/by-codes',
     {
       summary: 'Get multiple contacts by their contact codes',

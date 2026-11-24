@@ -360,5 +360,9 @@ export const xpandContactsRepository = (
 
       return contactCodes
     },
+
+    getContactsUpdatedSince: function (since: Date): Promise<Contact[]> {
+      throw new Error('Function not implemented.')
+    },
   }
 }

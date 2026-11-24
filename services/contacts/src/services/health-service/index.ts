@@ -14,12 +14,10 @@ import { AppInfrastructure } from '@src/context'
 const healthChecks: Map<string, SystemHealth> = new Map()
 
 export const routes = (router: OkapiRouter, infra: AppInfrastructure) => {
-  const { xpandDb, contactsDb } = infra
-
   /**
    * Round-up of DB connections used by this service
    */
-  const CONNECTIONS: Resource<Knex>[] = [xpandDb, contactsDb]
+  const CONNECTIONS: Resource<Knex>[] = infra.resources
 
   const subsystems: HealthCheckTarget[] = CONNECTIONS.map((resource) => ({
     probe: async (): Promise<SystemHealth> => {

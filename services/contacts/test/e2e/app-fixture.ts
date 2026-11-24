@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import makeApp from '@src/app'
 import config from '@src/common/config'
 import { makeAppContext } from '@src/context'
+import { makeXpandBackend } from '@src/adapters/xpand/backend'
 import { ContactWriter } from '@src/adapters/contact-writer'
 import { Knex } from 'knex'
 import { insertMany } from '@src/adapters/contact-relations'
@@ -123,7 +124,11 @@ export type FixtureOptions = {
  *         and makeClient methods.
  */
 export const makeTestAppFixture = async (opts: FixtureOptions) => {
+  // The e2e suite runs against the Xpand test database regardless of the
+  // configured backend, and needs the contacts DB handle to seed relations.
+  const backend = makeXpandBackend(config)
   const ctx = makeAppContext(config, {
+    backend,
     contactWriter: opts.contactWriter ?? refusingContactWriter,
   })
   const app = makeApp(ctx)
@@ -136,16 +141,13 @@ export const makeTestAppFixture = async (opts: FixtureOptions) => {
   await pool.close()
 
   try {
-    await ctx.infrastructure.contactsDb.init()
-    await seedContactRelations(ctx.infrastructure.contactsDb.get())
+    await backend.contactsDb.init()
+    await seedContactRelations(backend.contactsDb.get())
   } catch (err) {
     // A failing setup here must not leak open pools: `stop()` (below) is
     // never reached, so without this a broken fixture hangs the whole run
     // behind an open-handles error instead of surfacing the real failure.
-    await Promise.allSettled([
-      ctx.infrastructure.xpandDb.close(),
-      ctx.infrastructure.contactsDb.close(),
-    ])
+    await Promise.allSettled(backend.resources.map((r) => r.close()))
     throw err
   }
 
@@ -167,17 +169,14 @@ export const makeTestAppFixture = async (opts: FixtureOptions) => {
         })
       }
       try {
-        await resetContactRelations(ctx.infrastructure.contactsDb.get())
+        await resetContactRelations(backend.contactsDb.get())
       } finally {
         // Every pool closes even if the reset throws (a resource that healed
         // into `failed` makes `get()` throw) and even if one close throws.
         // A leaked pool hangs the run behind a confusing open-handles error
         // instead of the real failure; allSettled also keeps a close failure
         // from replacing the reset error on its way out of the finally.
-        await Promise.allSettled([
-          ctx.infrastructure.xpandDb.close(),
-          ctx.infrastructure.contactsDb.close(),
-        ])
+        await Promise.allSettled(backend.resources.map((r) => r.close()))
       }
     },
     port() {
@@ -196,7 +195,7 @@ export const makeTestAppFixture = async (opts: FixtureOptions) => {
       })
     },
     contactsDb() {
-      return ctx.infrastructure.contactsDb.get()
+      return backend.contactsDb.get()
     },
   }
 }
