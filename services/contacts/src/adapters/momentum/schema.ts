@@ -32,6 +32,10 @@ export const MomentumCustomerSchema = z.object({
 
 export const MomentumCustomersResponseSchema = z.object({
   customers: z.object({
+    pageInfo: z.object({
+      hasNextPage: z.boolean(),
+      endCursor: z.string().nullable(),
+    }),
     edges: z.array(z.object({ node: MomentumCustomerSchema })),
   }),
 })

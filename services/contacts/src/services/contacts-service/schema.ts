@@ -282,3 +282,9 @@ export const RelationErrorResponseBodySchema = z.object({
   /** For `guardian-exists`: the existing guardian's contact code, when known. */
   detail: z.string().optional(),
 })
+
+export const UpdatedSinceQueryParamsSchema = z.object({
+  since: z.coerce.date(),
+  pageSize: z.coerce.number(),
+  after: z.string().optional(),
+})

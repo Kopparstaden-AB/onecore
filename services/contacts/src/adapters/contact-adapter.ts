@@ -40,6 +40,15 @@ export interface Pagination {
    * The number of items per page
    */
   pageSize: number
+  /**
+   * The cursor to retrieve elements after, for cursor-based pagination
+   */
+  afterCursor?: string | null
+}
+
+export interface PageInfo {
+  hasNextPage: boolean
+  endCursor: string | null
 }
 
 export interface ContactsRepository {
@@ -218,5 +227,8 @@ export interface ContactsRepository {
     options?: { includeRelations?: boolean }
   ) => Promise<Contact[]>
 
-  getContactsUpdatedSince: (since: Date) => Promise<Contact[]>
+  getContactsUpdatedSince: (
+    since: Date,
+    pagination?: Pagination
+  ) => Promise<{ contacts: Contact[]; pageInfo: PageInfo }>
 }

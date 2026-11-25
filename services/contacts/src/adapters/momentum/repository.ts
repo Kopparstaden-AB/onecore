@@ -2,6 +2,8 @@ import { gql, type GraphQLClient } from 'graphql-request'
 import {
   ContactListParams,
   ContactsRepository,
+  PageInfo,
+  Pagination,
 } from '@src/adapters/contact-adapter'
 import { ContactIncludeOptions } from '@src/adapters/xpand/batch-query'
 import {
@@ -104,12 +106,20 @@ export const momentumContactsRepository = (
       throw new Error('Not implemented: momentum.getByEmailAddress')
     },
 
-    getContactsUpdatedSince: async (since: Date): Promise<Contact[]> => {
+    getContactsUpdatedSince: async (
+      since: Date,
+      pagination: Pagination = { page: 0, pageSize: 1, afterCursor: null }
+    ): Promise<{
+      contacts: Contact[]
+      pageInfo: PageInfo
+    }> => {
+      console.log(pagination)
       const response = await client.request(
         gql`
-          query ($since: DateTime) {
+          query ($since: DateTime, $pageSize: Int, $after: String) {
             customers(
-              first: 1
+              first: $pageSize
+              after: $after
               where: {
                 communications: {
                   some: {
@@ -121,6 +131,10 @@ export const momentumContactsRepository = (
                 }
               }
             ) {
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
               edges {
                 node {
                   id
@@ -147,12 +161,17 @@ export const momentumContactsRepository = (
         `,
         {
           since,
+          pageSize: pagination.pageSize,
+          after: pagination.afterCursor ?? null,
         }
       )
 
       const parsed = MomentumCustomersResponseSchema.parse(response)
 
-      return parsed.customers.edges.map((e) => toContact(e.node))
+      return {
+        contacts: parsed.customers.edges.map((e) => toContact(e.node)),
+        pageInfo: parsed.customers.pageInfo,
+      }
     },
 
     getAdministrators: function (

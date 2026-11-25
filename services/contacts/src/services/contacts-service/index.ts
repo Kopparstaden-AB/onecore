@@ -27,6 +27,7 @@ import {
   RelationErrorResponseBodySchema,
   RelationRoleTypeSchema,
   SyncContactsResponseBodySchema,
+  UpdatedSinceQueryParamsSchema,
 } from './schema'
 import { paginatedResponseSchema } from '@onecore/types'
 
@@ -265,21 +266,42 @@ export const routes = (
       tags: ['Contacts'],
       query: {
         since: z.coerce.date(),
+        pageSize: z.coerce.number(),
+        after: z.string().optional(),
       },
       response: {
-        200: GetContactsResponseBodySchema,
+        200: ONECoreHateOASResponseBodySchema.extend({
+          content: z.object({
+            contacts: z.array(ContactSchema),
+            pageInfo: z.any(),
+          }),
+        }),
         400: ErrorResponseBodySchema,
       },
     },
     async (ctx) => {
       const metadata = generateRouteMetadata(ctx, ctx.queryParameterNames ?? [])
-      const contacts = await contactsRepository.getContactsUpdatedSince(
-        ctx.query.since
-      )
+      const queryParams = UpdatedSinceQueryParamsSchema.safeParse(ctx.query)
+
+      if (!queryParams.success) {
+        ctx.status = 400
+        ctx.body = { error: queryParams.error.toString() }
+        return
+      }
+
+      const { contacts, pageInfo } =
+        await contactsRepository.getContactsUpdatedSince(
+          queryParams.data.since,
+          {
+            pageSize: queryParams.data.pageSize,
+            afterCursor: queryParams.data.after,
+            page: 0,
+          }
+        )
 
       ctx.body = {
         ...metadata,
-        content: { contacts },
+        content: { contacts, pageInfo },
       }
     }
   )
